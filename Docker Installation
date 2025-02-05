@@ -45,3 +45,4 @@ Verify the change: After logging back in, check if you can run Docker commands w
 Useful Commands:
 ==> cat /etc/group
 ==> cat /etc/os-release
+==> id ${USER}
