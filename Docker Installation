@@ -40,3 +40,8 @@ Log out and log back in: For the group changes to take effect, you must either l
 After exiting, log back in to your EC2 instance.
 Verify the change: After logging back in, check if you can run Docker commands without sudo:
 --- docker run hello-world
+
+
+Useful Commands:
+==> cat /etc/group
+==> cat /etc/os-release
