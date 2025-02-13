@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  EmailId:
+    Description: EmailId used in ses
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+Resources:
+  MyFIFOQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "MyFIFOQueue.fifo"  # FIFO queues must have the '.fifo' suffix
+      FifoQueue: true  # This indicates the queue is FIFO
+      ContentBasedDeduplication: true  # Enables content-based deduplication for the queue
+      VisibilityTimeout: 60
+      # Optional properties you can include:
+      # DelaySeconds: 10  # Set the delay time for messages in the queue
+      # MaximumMessageSize: 262144  # Maximum message size in bytes
+      # MessageRetentionPeriod: 345600  # Retention period in seconds
+      # ReceiveMessageWaitTimeSeconds: 0  # Long poll time in seconds
+      # RedrivePolicy:  # Dead-letter queue configuration (optional)
+      #   deadLetterTargetArn: arn:aws:sqs:region:account-id:DLQ
+      #   maxReceiveCount: 5
+  SESIdentity:
+    Type: 'AWS::SES::EmailIdentity'
+    Properties:
+      EmailIdentity: !Ref EmailId  # Replace with your email address
+
+   # IAM Role for Lambda
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'SQSToSESPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'sqs:ReceiveMessage'
+                  - 'sqs:DeleteMessage'
+                  - 'sqs:GetQueueAttributes'
+                Resource: '*'
+              - Effect: 'Allow'
+                Action:
+                  - 'ses:SendEmail'
+                  - 'ses:SendRawEmail'
+                Resource: '*'
+        - PolicyName: 'LambdaBasicExecutionPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'            
+      
+    # Lambda Function to process SQS messages and send email via SES
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: 'SQSToSESLambdaFunction'
+      Handler: 'index.handler'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: 'user-data-bucket-1993'  # Replace with your S3 bucket name
+        S3Key: 'SQSToSESLambdaFunction.zip'  # Replace with the key to your .zip file in S3
+      Runtime: 'python3.8'
+      Timeout: 60
+
+  # SQS Trigger for Lambda
+  SQSQueueLambdaTrigger:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      BatchSize: 5
+      EventSourceArn: !GetAtt MyFIFOQueue.Arn
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Enabled: 'True'
+
+Outputs:
+  SQSQueueURL:
+    Description: 'The URL of the created SQS Queue.'
+    Value: !Ref MyFIFOQueue
+
+  LambdaFunctionName:
+    Description: 'The name of the Lambda function.'
+    Value: !Ref LambdaFunction    

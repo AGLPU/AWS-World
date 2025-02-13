@@ -1,0 +1,35 @@
+Parameters:
+  EmailId:
+    Description: EmailId used in sns
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+   
+Resources:
+  # SNS Topic for Notifications
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "CloudFormation Stack Events"
+      TopicName: "cf-stack-notifications"
+  # Email Subscription to the SNS Topic
+  SNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: "email"
+      Endpoint: !Ref EmailId
+      TopicArn: !Ref SNSTopic
+    # CloudFormation Stack with NotificationARNs
+  MyCloudFormationStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://samples-1993-ap-south-1.s3.ap-south-1.amazonaws.com/Cloud-Formation-Scripts/multitier_app.yaml"  # URL to your template
+      NotificationARNs:
+        - !Ref SNSTopic  # SNS Topic for stack notifications
+
+  
+Outputs:
+  Subscibers:
+    Description: EmailId
+    Value: !GetAtt SNSSubscription.Endpoint
+  

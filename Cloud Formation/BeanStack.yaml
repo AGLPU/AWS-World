@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  sampleApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      Description: AWS Elastic Beanstalk Sample Application
+  sampleApplicationVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName:
+        Ref: sampleApplication
+      Description: AWS ElasticBeanstalk Sample Application Version
+      SourceBundle:
+        S3Bucket: !Sub "samples-1993-${AWS::Region}"
+        S3Key: index.html
+  sampleConfigurationTemplate:
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName:
+        Ref: sampleApplication
+      Description: AWS ElasticBeanstalk Sample Configuration Template
+      OptionSettings:
+      - Namespace: aws:autoscaling:asg
+        OptionName: MinSize
+        Value: '2'
+      - Namespace: aws:autoscaling:asg
+        OptionName: MaxSize
+        Value: '6'
+      - Namespace: aws:elasticbeanstalk:environment
+        OptionName: EnvironmentType
+        Value: LoadBalanced
+      - Namespace: aws:autoscaling:launchconfiguration
+        OptionName: IamInstanceProfile
+        Value: !Ref MyInstanceProfile
+      - Namespace: aws:autoscaling:launchconfiguration  
+        OptionName: "RootVolumeType"
+        Value: "gp3"
+
+      - Namespace: "aws:ec2:vpc"
+        OptionName: "VPCId"
+        Value: "vpc-0c8a159e577122763"  # Replace with your VPC ID
+      - Namespace: "aws:ec2:vpc"
+        OptionName: "Subnets"
+        Value: "subnet-0630aaa68913b6abb,subnet-0ba5ee250ea068f28,subnet-07c222b767fe2f7fc"
+      SolutionStackName: "64bit Amazon Linux 2 v5.9.10 running Node.js 18"
+  sampleEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName:
+        Ref: sampleApplication
+      Description: AWS ElasticBeanstalk Sample Environment
+      TemplateName:
+        Ref: sampleConfigurationTemplate
+      VersionLabel:
+        Ref: sampleApplicationVersion
+  MyInstanceRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Description: Beanstalk EC2 role
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+  MyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - !Ref MyInstanceRole
+   # Security Group for Elastic Beanstalk
+  # MyElasticBeanstalkSecurityGroup:
+  #   Type: "AWS::EC2::SecurityGroup"
+  #   Properties:
+  #     GroupDescription: "Elastic Beanstalk Environment Security Group"
+  #     SecurityGroupIngress:
+  #       - IpProtocol: "tcp"
+  #         FromPort: "80"
+  #         ToPort: "80"
+  #         CidrIp: "0.0.0.0/0"  # Modify the CIDR as needed to restrict access
+  #       - IpProtocol: "tcp"
+  #         FromPort: "443"
+  #         ToPort: "443"
+  #         CidrIp: "0.0.0.0/0"
+      
+
+ # Dynamically output the Elastic Beanstalk Environment's Security Group
+  # ElasticBeanstalkSecurityGroupOutput:
+  #   Value: !GetAtt sampleEnvironment.EnvironmentResources.SecurityGroups
+  #   Description: "The Security Group associated with the Elastic Beanstalk Environment"
+  #   Export:
+  #     Name: !Sub "${AWS::StackName}-ElasticBeanstalkSecurityGroup"
+
+# Outputs:
+#   ElasticBeanstalkEnvironmentSG:
+#     Description: "Elastic Beanstalk Security Group ID"
+#     Value: !GetAtt MyElasticBeanstalkSecurityGroup.GroupId
+#     Export:
+#       Name: !Sub "${AWS::StackName}-ElasticBeanstalkSecurityGroup"        
+

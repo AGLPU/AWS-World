@@ -1,0 +1,170 @@
+Description: 'User and Policy for dev and ops'
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: 'Enter the S3 Bucket name where you want to upload'
+    Default: ''
+  DbName:
+    Type: String
+    Description: 'Enter the database name'
+    Default: ''
+
+
+Resources:
+  Dev1:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: dev1
+      LoginProfile:
+        Password: Welcome1@
+
+  Dev2:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: dev2
+      LoginProfile:
+        Password: Welcome1@
+  Test1:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: test1
+      LoginProfile:
+        Password: Welcome1@
+  Test2:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: test2
+      LoginProfile:
+        Password: Welcome1@
+  
+
+  DevUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: 'DevUserGroup'
+  OpsUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: 'OpsUserGroup'
+      
+  DevUsers:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: !Ref 'DevUserGroup'
+      Users: [!Ref 'Dev1', !Ref 'Dev2']
+  
+  OpsUsers:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: !Ref 'OpsUserGroup'
+      Users: [!Ref 'Test1', !Ref 'Test2']
+    
+
+
+  DevUserPolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: DevPolicy
+      PolicyDocument:
+        Statement:
+         - Effect: Allow
+           Action: 
+              - s3:*
+           Resource: 
+            - !Sub arn:aws:s3:::${S3BucketName}
+
+         - Effect: Allow
+           Action:
+              - ec2:CreateLaunchTemplate
+              - ec2:CreateSnapshot
+              - ec2:CreateTags
+              - ec2:DeleteSnapshot
+              - ec2:RunInstances
+              - ec2:StopInstances
+              - ec2:TerminateInstances
+           Resource: 
+            - !Sub arn:aws:ec2    
+       
+         - Effect: Allow
+           Action:
+              - rds:* 
+           Resource: 
+            - !Sub arn:aws:rds:::${DbName}    
+          
+      Groups: [!Ref 'DevUserGroup']
+
+  OpsUserPolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: OpsPolicy
+      PolicyDocument:
+        Statement:
+         - Effect: Allow
+           Action: 
+              - s3:Get*
+              - s3:List*
+           Resource: 
+            - !Sub arn:aws:s3:::${S3BucketName}
+
+         - Effect: Allow
+           Action:
+              - ec2:DescribeInstances
+           Resource: 
+            - !Sub arn:aws:ec2    
+       
+         - Effect: Allow
+           Action:
+              - cloudwatch:* 
+           Resource: 
+            - !Sub arn:aws:cloudwatch    
+          
+      Groups: [!Ref 'OpsUserGroup']    
+  
+  User1Keys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:  !Ref 'Dev1'
+  User2Keys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:  !Ref 'Dev2'
+  User3Keys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:  !Ref 'Test1'         
+  User4Keys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:  !Ref 'Test2'  
+
+Outputs:
+  AccessKeyUser1:
+    Value: !Ref 'User1Keys'
+    Description: AWSAccessKeyId of new user
+  SecretKeyUser1:
+    Value: !GetAtt [User1Keys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user
+  AccessKeyUser2:
+    Value: !Ref 'User2Keys'
+    Description: AWSAccessKeyId of new user
+  SecretKeyUser2:
+    Value: !GetAtt [User2Keys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user
+  AccessKeyUser3:
+    Value: !Ref 'User3Keys'
+    Description: AWSAccessKeyId of new user
+  SecretKeyUser3:
+    Value: !GetAtt [User3Keys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user    
+  AccessKeyUser4:
+    Value: !Ref 'User4Keys'
+    Description: AWSAccessKeyId of new user
+  SecretKeyUser4:
+    Value: !GetAtt [User4Keys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user    
+
+
