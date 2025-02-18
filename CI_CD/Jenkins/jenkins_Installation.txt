@@ -1,0 +1,99 @@
+Step 1: Launch an EC2 Instance
+-- Go to the AWS Management Console.
+-- Navigate to EC2 > Instances > Launch Instance.
+-- Select an Amazon Machine Image (AMI):
+-- Choose Amazon Linux 2 or Ubuntu 22.04 LTS.
+-- Choose an Instance Type (e.g., t2.medium or t3.medium for better performance).
+-- Configure Security Group:
+-- Open ports 8080, 22 (SSH), and optionally 443 (HTTPS) if using SSL.
+-- Choose Key Pair for SSH access.
+-- Click Launch Instance.
+
+Step 2: Connect to EC2
+Use SSH to connect to your instance:
+
+ssh -i your-key.pem ubuntu@your-ec2-public-ip   # For Ubuntu
+
+Step 3: Install Java (Jenkins Dependency)
+Jenkins requires Java (OpenJDK 11 or later):
+
+For Ubuntu:
+
+sudo apt update -y
+sudo apt install openjdk-11-jdk -y
+java -version
+
+Step 4: Install Jenkins
+For Ubuntu:
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+echo "deb https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
+sudo apt update -y
+sudo apt install jenkins -y
+
+Step 5: Start and Enable Jenkins
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+Check status:
+sudo systemctl status jenkins
+
+Step 6: Configure Firewall (Security Group)
+Allow Jenkins traffic on port 8080:
+
+For Ubuntu (UFW):
+sudo ufw allow 8080/tcp
+sudo ufw enable
+Or update the AWS Security Group to allow port 8080 from your IP.
+
+Step 7: Access Jenkins Web Interface
+Get your EC2 public IP:
+
+curl -s http://169.254.169.254/latest/meta-data/public-ipv4
+
+Open your browser and go to:
+http://your-ec2-public-ip:8080
+
+Get the initial admin password:
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Paste it into the Jenkins setup page.
+Follow the installation wizard to install suggested plugins and create an admin user.
+
+
+Verify if Jenkins is listening on port 8080:
+sudo netstat -tulnp | grep 8080
+
+Check Jenkins Logs for Errors
+sudo cat /var/log/jenkins/jenkins.log
+
+Ensure Port 8080 is Free
+Jenkins may fail to start if another process is using port 8080. Check with:
+sudo netstat -tulnp | grep 8080
+
+
+If another process is using it, stop it:
+sudo kill -9 <process_id>
+
+Then restart Jenkins:
+sudo systemctl restart jenkins
+
+Verify Jenkins User Permissions
+Ensure Jenkins has permission to access required directories:
+
+sudo chown -R jenkins:jenkins /var/lib/jenkins
+sudo chmod -R 755 /var/lib/jenkins
+
+Then restart:
+sudo systemctl restart jenkins
+-------------------------------------------------------------------------------------------------------
+
+
+Option 2: Update /etc/environment (For All Users)
+Open /etc/environment:
+
+sudo nano /etc/environment
+
+Add this line at the end:
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+
+Save and apply the changes:
+source /etc/environment
