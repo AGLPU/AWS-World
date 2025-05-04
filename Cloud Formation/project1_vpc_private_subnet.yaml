@@ -149,7 +149,9 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnet2
-      RouteTableId: !Ref PublicRouteTable         
+      RouteTableId: !Ref PublicRouteTable     
+  
+  
 
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -216,7 +218,6 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: 'my-target-group'
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP

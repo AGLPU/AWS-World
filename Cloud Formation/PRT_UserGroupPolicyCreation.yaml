@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  LatestAmiId:
+    Description: Region specific image from the Parameter Store
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/canonical/ubuntu/server/jammy/stable/current/amd64/hvm/ebs-gp2/ami-id'
+
+  InstanceType:
+    Description: Amazon EC2 instance type for the instances
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+    Default: t2.micro
+  KeyPair:
+    Description: key pair associated to your AWS account
+    Type: String
+    Default: AG_SSE
+  S3BucketName:
+    Description: s3 bucket name
+    Type: String
+    Default: aman-goel-prod-1
+
+Resources:
+  # IAM User Group
+  IntellipaatUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Intellipaat
+
+  # IAM Users
+  DevUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: Dev
+      Groups:
+        - !Ref IntellipaatUserGroup
+
+  OpsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: Ops
+      Groups:
+        - !Ref IntellipaatUserGroup
+
+  ProdUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: Prod
+      Groups:
+        - !Ref IntellipaatUserGroup
+
+  # Policy 1 - Users can create access keys for themselves
+  Policy1:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: CreateAccessKeysForGroupUsers
+      Groups:
+        - !Ref IntellipaatUserGroup
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: iam:CreateAccessKey
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:user/*"
+            Condition:
+                StringEquals:
+                  "aws:username": "${aws:username}"
+
+  # Policy 2 - Launch and Connect to EC2
+  Policy2:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: EC2LaunchAndConnect
+      Groups:
+        - !Ref IntellipaatUserGroup
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - ec2:RunInstances
+              - ec2:DescribeInstances
+              - ec2:StartInstances
+              - ec2:StopInstances
+              - ec2:TerminateInstances
+            Resource: "*"
+
+  # Inline Policy for Dev - List S3 Buckets
+  DevUserPolicy:
+    Type: AWS::IAM::UserPolicy
+    Properties:
+      UserName: !Ref DevUser
+      PolicyName: DevListBuckets
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+            Resource: "*"
+
+  # Inline Policy for Ops - Upload to Existing Buckets
+  OpsUserPolicy:
+    Type: AWS::IAM::UserPolicy
+    Properties:
+      UserName: !Ref OpsUser
+      PolicyName: OpsUploadS3
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: "arn:aws:s3:::*/*"
+
+  # IAM Role for Prod - Full S3 Access
+  ProdS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ProdS3AccessRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/Prod'
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FullS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: "*"
+    DependsOn: ProdUser  # Ensures that 'Prod' user is created first
+
+  # S3 Bucket Creation by Prod User
+  ProdS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+
+  # EC2 Instance for Prod User
+  ProdEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      KeyName: !Ref KeyPair
+      Tags:
+        - Key: Name
+          Value: PRT
+
+
+#DevUser: AKIA2FXAEBKJXRUIL6W5/m45GXTY0RVwVWcg+I87/1RxpvBRWaNmLEJevUhIl
+#OpsUser: AKIA2FXAEBKJ6LVALHVD/LhMNUL1lb1b/ImHP5P5mr+cgOQrMRsgmxVvKEVqw
+#produser: AKIA2FXAEBKJ7NE2IEVF/wXIIRG7NkCw5P8fOKj2XSq2LvWIQAk05Arl0jh0C

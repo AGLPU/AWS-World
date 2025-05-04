@@ -1,40 +1,35 @@
-Step 1: Launch an EC2 Instance
--- Go to the AWS Management Console.
--- Navigate to EC2 > Instances > Launch Instance.
--- Select an Amazon Machine Image (AMI):
--- Choose Amazon Linux 2 or Ubuntu 22.04 LTS.
--- Choose an Instance Type (e.g., t2.medium or t3.medium for better performance).
--- Configure Security Group:
--- Open ports 8080, 22 (SSH), and optionally 443 (HTTPS) if using SSL.
--- Choose Key Pair for SSH access.
--- Click Launch Instance.
+#!/bin/bash
 
-Step 2: Connect to EC2
-Use SSH to connect to your instance:
+# Jenkins installation script for Ubuntu EC2
 
-ssh -i your-key.pem ubuntu@your-ec2-public-ip   # For Ubuntu
+set -e
 
-Step 3: Install Java (Jenkins Dependency)
-Jenkins requires Java (OpenJDK 11 or later):
+echo "🔄 Updating system..."
+sudo apt update && sudo apt upgrade -y
 
-For Ubuntu:
+echo "☕ Installing Java (OpenJDK 17)..."
+sudo apt install openjdk-17-jdk -y
 
-sudo apt update -y
-sudo apt install openjdk-11-jdk -y
-java -version
+echo "🔐 Adding Jenkins GPG key..."
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 
-Step 4: Install Jenkins
-For Ubuntu:
-wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
-echo "deb https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
-sudo apt update -y
+echo "📦 Adding Jenkins repository..."
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+echo "🔄 Updating package list again..."
+sudo apt update
+
+echo "📥 Installing Jenkins..."
 sudo apt install jenkins -y
 
-Step 5: Start and Enable Jenkins
-sudo systemctl enable jenkins
+echo "▶️ Starting and enabling Jenkins service..."
 sudo systemctl start jenkins
-Check status:
-sudo systemctl status jenkins
+sudo systemctl enable jenkins
+
+echo "✅ Jenkins installed and running on port 8080"
+echo "🔑 Initial Admin Password:"
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
 
 Step 6: Configure Firewall (Security Group)
 Allow Jenkins traffic on port 8080:

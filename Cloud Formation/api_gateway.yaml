@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "API Gateway with Proxy+ to forward requests dynamically"
+
+Resources:
+  # ✅ API Gateway Creation
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "ClimateServiceApi"
+      Description: "API Gateway for Climate Service with Proxy+ Routing"
+      EndpointConfiguration:
+        Types:
+          - REGIONAL  # Change to PRIVATE for VPC-specific API
+
+  # ✅ Root Resource /api
+  ApiRootResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: "api"
+
+  # ✅ Nested Resource /api/climate-service
+  climateServiceResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !Ref ApiRootResource
+      PathPart: "climate-service"
+
+  # ✅ Proxy Resource for Dynamic Paths /api/climate-service/{proxy+}
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !Ref climateServiceResource
+      PathPart: "{proxy+}"  # Enables dynamic path forwarding
+
+  # ✅ ANY Method to forward all requests
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ProxyResource
+      HttpMethod: "ANY"
+      AuthorizationType: "NONE"
+      Integration:
+        Type: "HTTP"
+        IntegrationHttpMethod: "ANY"
+        Uri: "http://52.66.243.99:80/api/climate/{proxy}"  # Replace with your EC2 IP & port
+        RequestParameters:
+          integration.request.header.Authorization: "method.request.header.Authorization"
+          integration.request.path.proxy: "method.request.path.proxy"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        IntegrationResponses:
+          - StatusCode: "200"
+      RequestParameters:
+        method.request.path.proxy: true
+        method.request.header.Authorization: true
+      MethodResponses:
+        - StatusCode: "200"
+
+    # ✅ Deploy API to Prod Stage
+  ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      DependsOn: ProxyMethod
+      Properties:
+        RestApiId: !Ref ApiGateway
+        StageName: "prod"
+
+
+Outputs:
+  ApiInvokeURL:
+    Description: "API Gateway Invoke URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/api/climate-service"

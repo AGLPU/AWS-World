@@ -46,8 +46,8 @@ These commands cover a wide range of Docker operations, from basic container man
 - df -h **: disk space
 
 ### **Publish/Deploy java spring boot app from local host to ec2 having docker installed**
-- scp -i "AG_SSE.pem" target/enviornment-0.0.1-SNAPSHOT.jar ubuntu@13.233.81.29:/home/ubuntu/
-- scp -i "AG_SSE.pem" Dockerfile ubuntu@13.233.81.29:/home/ubuntu/
+- scp -i "AG_SSE.pem" target/RestApis-0.0.1-SNAPSHOT.jar ubuntu@13.233.88.235:/home/ubuntu/
+- scp -i "AG_SSE.pem" Dockerfile ubuntu@13.233.88.235:/home/ubuntu/
 - ssh -i "AG_SSE.pem" ubuntu@13.233.81.29
 
 - cd /home/ubuntu/
@@ -85,6 +85,15 @@ Check if AWS CLI is installed correctly:
 
 # Authenticate with ECR
 -- aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region "ap-south-1" | docker login --username AWS --password-stdin 699475954323.dkr.ecr.ap-south-1.amazonaws.com
+910139418166
+
+
+export ECR_REPO_NAME="rest-api-app"
+export AWS_ACCOUNT_ID=910139418166
+export AWS_REGION="ap-south-1"
+
+
 
 # Build the Docker image locally
 -- docker build -t $ECR_REPO_NAME .
@@ -113,9 +122,21 @@ run docker-compose file
 -- sudo docker-compose down
 -- sudo docker-compose down
 
+-- aws ecr list-images --repository-name my-app
+
+-- sudo netstat -tulnp | grep ":80"
+-- apt update && apt install -y curl
+-- apt update && apt install lsof -y 
+lsof -i :8080
+ --------- to check processs running on port
+ 
+ // v1 running
+ http://3.7.46.73:8084/api/climate/get/region
 
 
-
-
-
+find / -type d -name "folder_name" 2>/dev/null
+/ → Searches the entire system (use . for the current directory).
+-type d → Searches only for directories (folders).
+-name "folder_name" → Matches the folder name exactly.
+2>/dev/null → Hides permission errors.
 
