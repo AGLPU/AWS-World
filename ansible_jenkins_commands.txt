@@ -1,0 +1,71 @@
+
+			
+			
+		
+	
+	sudo yum install -y amazon-efs-utils nfs-utils
+	modinfo lustre
+sudo mkdir -p /mnt/fsx
+
+
+
+	aws fsx describe-file-systems --region ap-south-1 \
+  --query "FileSystems[*].DNSName" --output text
+  
+sudo amazon-linux-extras enable lustre2.10
+sudo yum clean metadata
+sudo yum install -y lustre-client
+
+
+sudo mount -t lustre -o noatime,flock fs-0d103aaa6ddec2bd8.fsx.ap-south-1.amazonaws.com@tcp:/fsx /mnt/fsx
+
+sudo mount -t nfs svm-01234567890abdef0.fs-01234567890abcdef1.fsx.us-east-1.amazonaws.com:/vol1 /fsx
+
+
+# From master, copy to worker via SCP:
+
+sudo scp -i ~/.ssh/id_rsa_ec2a agent.jar ubuntu@3.109.62.188:/home/ubuntu/
+
+13.232.179.161
+
+on worker node:
+java -jar agent.jar -jnlpUrl http://localhost:8080/computer/worker-1/slave-agent.jnlp -secret <SECRET> -workDir "/home/jenkins/agent"
+
+java -jar agent.jar -url http://13.233.214.12:8080/ -secret eb39b866451d8afba0f29ca657a2fddae9abf10317e5c45350b24e4955476ffc -name slave1 -webSocket -workDir "/home/ubuntu/jenkins"
+
+📌 Requirements
+agent.jar must be downloaded (you can get it from http://<jenkins-url>/jnlpJars/agent.jar).
+
+Java must be installed on the agent machine.
+
+The agent node (slave1) must be configured in the Jenkins UI beforehand (Manage Jenkins → Nodes → New Node).
+
+On Repo:
+http://15.206.169.236:8080/github-webhook/
+
+on agent:
+
+# On Ubuntu:
+sudo apt update
+sudo apt install -y docker.io
+
+# Enable and start Docker
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# (Optional) Add Jenkins user to docker group
+sudo usermod -aG docker jenkins
+
+# Reboot or re-login required for group change
+
+--- ps aux | grep jenkins
+--- sudo usermod -aG docker jenkins
+--- sudo systemctl restart jenkins
+# OR simply reboot:
+--- sudo reboot
+--- groups jenkins
+
+
+ssh -i ~/.ssh/id_rsa ubuntu@192.168.1.101
+echo "your-public-key-here" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
