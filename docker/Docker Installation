@@ -32,6 +32,9 @@ docker run hello-world
 #Add your user to the Docker group:
 sudo usermod -aG docker ${USER}
 
+#install docker compose
+sudo apt  install docker-compose  # version 1.29.2-6
+
 #Log out and log back in: For the group changes to take effect, you must either log out and log back in or restart the session:
 exit
 
