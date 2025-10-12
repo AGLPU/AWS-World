@@ -20,3 +20,7 @@ systemctl start apache2
 
 # Optional: Add a basic HTML page
 echo "<h1>Apache Web Server is running on Ubuntu EC2!</h1>" > /var/www/html/index.html
+
+# Trasfer file from HOST to AWS
+scp -i keyPair.pem /c/Learning/Projects/LoginApp2/target/LoginApp2-0.0.1-SNAPSHOT.jar ubuntu@13.203.159.208:/home/ubuntu/
+LoginApp2-0.0.1-SNAPSHOT.jar    
