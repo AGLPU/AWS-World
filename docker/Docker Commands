@@ -140,3 +140,15 @@ find / -type d -name "folder_name" 2>/dev/null
 -name "folder_name" → Matches the folder name exactly.
 2>/dev/null → Hides permission errors.
 
+-- Without multi-stage:
+Local machine:
+    mvn clean package
+        ↓
+Docker builds image using pre-built jar
+
+-- With multi-stage:
+Docker:
+    Stage 1: Build jar using JDK + Maven
+        ↓
+    Stage 2: Copy jar into clean JRE-only image
+
