@@ -104,7 +104,7 @@ export AWS_REGION="ap-south-1"
 # Push the image to AWS ECR
 -- docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:v1.0
 
--- docker run -d -p 8080:80 $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+-- docker run -d -p 8080:80 $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:v1.0
 
 
 # Verify the image in ECR
